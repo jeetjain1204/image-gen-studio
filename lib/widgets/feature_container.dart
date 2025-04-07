@@ -28,7 +28,6 @@ class FeatureContainer extends StatelessWidget {
         height: 180,
         alignment: Alignment.bottomLeft,
         decoration: BoxDecoration(
-          color: primaryDark,
           borderRadius: BorderRadius.circular(24),
           image: DecorationImage(
             image: AssetImage('assets/$image.jpg'),

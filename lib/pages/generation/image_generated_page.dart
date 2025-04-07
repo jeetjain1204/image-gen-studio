@@ -1,37 +1,43 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:aadi/widgets/my_button.dart';
+import 'package:flutter/services.dart';
 
 class ImageGeneratedPage extends StatelessWidget {
   final Uint8List image;
+  static const platform = MethodChannel('com.infinitylab.aadi/image_saver');
 
   const ImageGeneratedPage({Key? key, required this.image}) : super(key: key);
 
   Future<void> _saveImage(BuildContext context) async {
     try {
-      final result = await ImageGallerySaver.saveImage(
-        image,
-        quality: 100,
-        name: "aadi_generated_${DateTime.now().millisecondsSinceEpoch}",
+      // Save to temporary file first
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File(
+        '${tempDir.path}/aadi_generated_${DateTime.now().millisecondsSinceEpoch}.png',
+      );
+      await tempFile.writeAsBytes(image);
+
+      // Use platform channel to save to gallery
+      final result = await platform.invokeMethod<bool>(
+        'saveImageToGallery',
+        {'imagePath': tempFile.path},
       );
 
-      if (result['isSuccess']) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Image saved to gallery')));
+      if (result == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Image saved to gallery')),
+        );
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Failed to save image')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to save image')),
+        );
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error saving image: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving image: $e')),
+      );
     }
   }
 
@@ -45,9 +51,9 @@ class ImageGeneratedPage extends StatelessWidget {
       await tempFile.writeAsBytes(image);
 
       // Share the file
-      await Share.shareXFiles([
-        XFile(tempFile.path),
-      ], text: 'Generated with Aadi App');
+      // await Share.shareXFiles([
+      //   XFile(tempFile.path),
+      // ], text: 'Generated with Aadi App');
     } catch (e) {
       ScaffoldMessenger.of(
         context,
@@ -85,7 +91,7 @@ class ImageGeneratedPage extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Row(
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 MyButton(text: 'SAVE', onTap: () => _saveImage(context)),

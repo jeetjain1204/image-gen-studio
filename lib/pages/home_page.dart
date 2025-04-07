@@ -1,6 +1,6 @@
-import 'package:aadi/image_input_page.dart';
-import 'package:aadi/image_text_input_page.dart';
-import 'package:aadi/text_input_page.dart';
+import 'package:aadi/pages/generation/image_input_page.dart';
+import 'package:aadi/pages/generation/image_text_input_page.dart';
+import 'package:aadi/pages/generation/text_input_page.dart';
 import 'package:aadi/utils/colors.dart';
 import 'package:aadi/widgets/feature_container.dart';
 import 'package:aadi/widgets/snack_bar.dart';

@@ -1,8 +1,7 @@
-import 'dart:io';
-import 'dart:typed_data';
-import 'package:aadi/env_config.dart';
-import 'package:aadi/firebase_options.dart';
-import 'package:aadi/home_page.dart';
+import 'package:aadi/configs/env_config.dart';
+import 'package:aadi/configs/firebase_options.dart';
+import 'package:aadi/pages/main_page.dart';
+import 'package:aadi/provider/main_page_provider.dart';
 import 'package:aadi/utils/colors.dart';
 import 'package:aadi/utils/crash_reporting_services.dart';
 import 'package:aadi/utils/openai.dart';
@@ -11,44 +10,52 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // ENV
   await EnvConfig.load();
   EnvConfig.validate();
 
-  // Initialize Firebase
+  // FIREBASE
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
   await FirebaseAppCheck.instance.activate(
     webProvider: ReCaptchaV3Provider('recaptcha-v3-site-key'),
     androidProvider: AndroidProvider.debug,
     appleProvider: AppleProvider.appAttest,
   );
+  await CrashReportingService.instance.initialize();
+  await PerformanceMonitoringService.instance.initialize();
 
+  // ADMOB
   try {
     await MobileAds.instance.initialize();
     await MobileAds.instance.updateRequestConfiguration(
       RequestConfiguration(
         tagForChildDirectedTreatment: TagForChildDirectedTreatment.unspecified,
         tagForUnderAgeOfConsent: TagForUnderAgeOfConsent.unspecified,
-        testDeviceIds: [
-          '33BE2250B43518CCDA7DE426D04EE231'
-        ], // Add your test device ID
+        testDeviceIds: ['33BE2250B43518CCDA7DE426D04EE231'],
       ),
     );
-    print('AdMob initialized successfully');
   } catch (e) {
     print('Error initializing AdMob: $e');
   }
 
-  await CrashReportingService.instance.initialize();
-
-  await PerformanceMonitoringService.instance.initialize();
-
+  // OPENAI
   await OpenAIService.instance.initialize(EnvConfig.openaiApiKey);
-  runApp(const MyApp());
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => MainPageProvider(),
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -81,41 +88,8 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: primary),
         useMaterial3: true,
       ),
-      home: const HomePage(),
       debugShowCheckedModeBanner: false,
+      home: const MainPage(),
     );
-  }
-}
-
-Future<Uint8List?> handleImageAndText(
-  File? imageFile,
-  String prompt,
-  String style,
-  String featureType,
-) async {
-  try {
-    // Use the appropriate method based on whether an image is provided
-    if (imageFile != null) {
-      return await OpenAIService.instance.generateImageFromImageAndText(
-        imageFile: imageFile,
-        prompt: prompt,
-        model: 'dall-e-2',
-        size: '512x512',
-        n: 1,
-        isVariation: false,
-      );
-    } else {
-      return await OpenAIService.instance.generateImageFromText(
-        prompt: prompt,
-        model: 'dall-e-2',
-        size: '512x512',
-        quality: 'standard',
-        style: 'vivid',
-        n: 1,
-      );
-    }
-  } catch (e) {
-    debugPrint('Error processing image and text: $e');
-    return null;
   }
 }

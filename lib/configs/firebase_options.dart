@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyATU5AtC7hIe2Yf9YYw-8VorgEuXgjD9FA',
-    appId: '1:148912225:android:8a4be5e6971d61816c9220',
+    appId: '1:148912225:android:6356d5cb4990b7886c9220',
     messagingSenderId: '148912225',
     projectId: 'aadi-1204',
     storageBucket: 'aadi-1204.firebasestorage.app',
@@ -59,12 +59,10 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyBDGydF11z23m6iHoGw0Fp2wltYwuvuSxg',
-    appId: '1:148912225:ios:3aa7af917f6cdb946c9220',
+    appId: '1:148912225:ios:875af57ce034ab196c9220',
     messagingSenderId: '148912225',
     projectId: 'aadi-1204',
     storageBucket: 'aadi-1204.firebasestorage.app',
-    androidClientId: '148912225-1a80rn5g2qdqv061t4cdveo9upitrq3o.apps.googleusercontent.com',
-    iosClientId: '148912225-hmte3mb0v743g57n96ks8spihr7bstms.apps.googleusercontent.com',
     iosBundleId: 'com.infinitylab.aadi',
   );
 }

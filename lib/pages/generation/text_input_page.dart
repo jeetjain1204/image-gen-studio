@@ -1,35 +1,38 @@
-import 'dart:io';
-import 'package:aadi/image_generated_page.dart';
-import 'package:aadi/loading_page.dart';
+import 'package:aadi/pages/generation/image_generated_page.dart';
+import 'package:aadi/pages/generation/loading_page.dart';
 import 'package:aadi/utils/colors.dart';
 import 'package:aadi/utils/openai.dart';
 import 'package:aadi/utils/style_map.dart';
-import 'package:aadi/widgets/image_picker.dart';
 import 'package:aadi/widgets/my_button.dart';
-import 'package:aadi/widgets/snack_bar.dart';
+import 'package:aadi/widgets/text_field.dart';
 import 'package:flutter/material.dart';
 
-class ImageInputPage extends StatefulWidget {
-  const ImageInputPage({
-    super.key,
-    required this.featureName,
-    required this.styles,
-  });
+class TextInputPage extends StatefulWidget {
+  const TextInputPage({super.key, required this.styles, required this.prompt});
 
-  final String featureName;
+  final String prompt;
   final List<String> styles;
 
   @override
-  State<ImageInputPage> createState() => _ImageInputPageState();
+  State<TextInputPage> createState() => _TextInputPageState();
 }
 
-class _ImageInputPageState extends State<ImageInputPage> {
-  File? image;
+class _TextInputPageState extends State<TextInputPage> {
+  final textController = TextEditingController();
   String? selectedStyle;
 
+  @override
+  void initState() {
+    super.initState();
+    setState(() {
+      textController.text = widget.prompt;
+    });
+  }
+
   Future<void> generate() async {
-    if (selectedStyle == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+    final prompt = textController.text.trim();
+    if (prompt.isEmpty || selectedStyle == null) {    
+        ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter prompt and select a style')),
       );
       return;
@@ -41,25 +44,19 @@ class _ImageInputPageState extends State<ImageInputPage> {
         MaterialPageRoute(builder: (_) => const LoadingPage()),
       );
 
-      String feature =
-          widget.featureName.toLowerCase() == 'profile avatar maker'
-              ? 'profile'
-              : 'convert';
-
       final explanation =
-          styleExplanations[feature]![selectedStyle] ?? selectedStyle;
+          styleExplanations['text']![selectedStyle] ?? selectedStyle;
 
-      // Use the new method for image+text generation
-      final generatedImage = await OpenAIService.instance
-          .generateImageFromImageAndText(
-            imageFile: image!,
-            prompt:
-                'Convert the provided image to a $selectedStyle style. $explanation',
-            model: 'dall-e-2',
-            size: '512x512',
-            n: 1,
-            isVariation: false,
-          );
+      // Use the new method for text-to-image generation
+      final generatedImage = await OpenAIService.instance.generateImageFromText(
+        prompt:
+            'Convert the provided image to a $selectedStyle style. $explanation',
+        model: 'dall-e-2',
+        size: '512x512',
+        quality: 'standard',
+        style: 'vivid',
+        n: 1,
+      );
 
       if (!context.mounted) return;
 
@@ -79,11 +76,9 @@ class _ImageInputPageState extends State<ImageInputPage> {
 
   @override
   Widget build(BuildContext context) {
-    final imagePicker = ImagePickerHelper();
-
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      appBar: AppBar(title: Text(widget.featureName)),
+      appBar: AppBar(title: Text('Turn Imagination into ART')),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -95,62 +90,13 @@ class _ImageInputPageState extends State<ImageInputPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    image == null
-                        ? InkWell(
-                          onTap: () async {
-                            final selectedImage =
-                                await imagePicker.pickImageFromCamera();
-                            if (selectedImage != null) {
-                              setState(() {
-                                image = selectedImage;
-                              });
-                            } else {
-                              return mySnackBar(context, 'Select an Image');
-                            }
-                          },
-                          borderRadius: BorderRadius.circular(24),
-                          child: Container(
-                            width: width,
-                            height: width,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: primaryDark,
-                                width: 1.5,
-                              ),
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            child: Text('Select Image'),
-                          ),
-                        )
-                        : Container(
-                          width: width,
-                          height: width,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: primaryDark, width: 1.5),
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          child: Stack(
-                            alignment: Alignment.topRight,
-                            children: [
-                              Image.file(
-                                image!,
-                                width: width,
-                                height: width,
-                                fit: BoxFit.contain,
-                              ),
-                              IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    image = null;
-                                  });
-                                },
-                                icon: Icon(Icons.cancel_outlined),
-                              ),
-                            ],
-                          ),
-                        ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: width * 0.0225),
+                      child: MyTextField(
+                        hintText: 'Enter Prompt',
+                        controller: textController,
+                      ),
+                    ),
                     SizedBox(
                       width: width,
                       child: GridView.builder(

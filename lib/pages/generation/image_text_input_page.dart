@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'package:aadi/image_generated_page.dart';
-import 'package:aadi/loading_page.dart';
+import 'package:aadi/pages/generation/image_generated_page.dart';
+import 'package:aadi/pages/generation/loading_page.dart';
 import 'package:aadi/utils/colors.dart';
 import 'package:aadi/utils/openai.dart';
 import 'package:aadi/utils/style_map.dart';

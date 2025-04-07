@@ -31,7 +31,7 @@ class EnvConfig {
     final requiredVars = [
       // 'FIREBASE_API_KEY',
       // 'FIREBASE_APP_ID',
-      // 'FIREBASE_MESSAGING_SENDER_ID',
+      // 'FIREBASE_MESSAGING_SENDER_ID',  
       // 'FIREBASE_PROJECT_ID',
       // 'ADMOB_APP_ID',
       'OPENAI_API_KEY',
