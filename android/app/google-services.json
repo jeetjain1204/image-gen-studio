@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "148912225",
+    "project_id": "aadi-1204",
+    "storage_bucket": "aadi-1204.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:148912225:android:8a4be5e6971d61816c9220",
+        "android_client_info": {
+          "package_name": "com.infinitylab.aadi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyATU5AtC7hIe2Yf9YYw-8VorgEuXgjD9FA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
