@@ -10,9 +10,8 @@ class OpenAIService {
   final _monitoring = FirebaseMonitoringService.instance;
   String? _apiKey;
 
-  // Maximum dimensions for input images
   static const int maxImageDimension = 1024;
-  static const int maxFileSize = 4 * 1024 * 1024; // 4MB
+  static const int maxFileSize = 4 * 1024 * 1024;
 
   OpenAIService._internal();
 
@@ -25,7 +24,6 @@ class OpenAIService {
     );
   }
 
-  /// Generate an image from a text prompt
   Future<Uint8List> generateImageFromText({
     required String prompt,
     String model = 'dall-e-2',
@@ -74,7 +72,6 @@ class OpenAIService {
             throw Exception('No image URL in OpenAI API response');
           }
 
-          // Fetch the image bytes from the URL
           final imageResponse = await http.get(Uri.parse(imageUrl));
           if (imageResponse.statusCode != 200) {
             throw Exception('Failed to fetch generated image');
@@ -94,7 +91,6 @@ class OpenAIService {
     }
   }
 
-  /// Generate an image variation or edit based on an existing image and text prompt
   Future<Uint8List> generateImageFromImageAndText({
     required File imageFile,
     required String prompt,
@@ -115,36 +111,29 @@ class OpenAIService {
           print('Original image path: ${imageFile.path}');
           print('Original image size: ${await imageFile.length()} bytes');
 
-          // Process the image and encode it as base64
           final processedImageBytes = await _processImage(imageFile);
           print('Processed image size: ${processedImageBytes.length} bytes');
 
-          // Create a transparent mask of the same size as the processed image
           final decodedImage = img.decodeImage(processedImageBytes);
           if (decodedImage == null) {
             throw Exception('Failed to decode processed image');
           }
 
-          // Create a mask image (white with transparent areas where we want changes)
           final maskImage = img.Image(
             width: decodedImage.width,
             height: decodedImage.height,
             numChannels: 4,
           );
 
-          // Fill with semi-transparent white to allow for partial edits
           for (var y = 0; y < maskImage.height; y++) {
             for (var x = 0; x < maskImage.width; x++) {
-              // RGBA: White with 50% transparency
               maskImage.setPixel(x, y, img.ColorRgba8(255, 255, 255, 128));
             }
           }
 
-          // Encode mask as PNG
           final maskBytes = Uint8List.fromList(img.encodePng(maskImage));
           print('Created mask image: ${maskBytes.length} bytes');
 
-          // Choose endpoint based on whether we're doing an edit or variation
           final endpoint = Uri.parse(
             isVariation || prompt.isEmpty
                 ? 'https://api.openai.com/v1/images/variations'
@@ -154,11 +143,9 @@ class OpenAIService {
           print('Using endpoint: $endpoint');
           print('Prompt: $prompt');
 
-          // Create a multipart request
           final request = http.MultipartRequest('POST', endpoint);
           request.headers['Authorization'] = 'Bearer $_apiKey';
 
-          // Add the image file
           request.files.add(
             http.MultipartFile.fromBytes(
               'image',
@@ -167,7 +154,6 @@ class OpenAIService {
             ),
           );
 
-          // Add mask for edits endpoint
           if (!isVariation && prompt.isNotEmpty) {
             request.files.add(
               http.MultipartFile.fromBytes(
@@ -178,7 +164,6 @@ class OpenAIService {
             );
           }
 
-          // Add other parameters
           request.fields['n'] = n.toString();
           request.fields['size'] = size;
           if (!isVariation && prompt.isNotEmpty) {
@@ -186,7 +171,6 @@ class OpenAIService {
           }
 
           print('Sending request to OpenAI API...');
-          // Send the request
           final streamedResponse = await request.send();
           final response = await http.Response.fromStream(streamedResponse);
 
@@ -203,7 +187,6 @@ class OpenAIService {
           }
 
           print('Generated image URL: $imageUrl');
-          // Fetch the image bytes from the URL
           final imageResponse = await http.get(Uri.parse(imageUrl));
           if (imageResponse.statusCode != 200) {
             throw Exception('Failed to fetch generated image');
@@ -226,11 +209,9 @@ class OpenAIService {
     }
   }
 
-  /// Process an image to meet OpenAI API requirements
   Future<Uint8List> _processImage(File imageFile) async {
     try {
       print('Processing image: ${imageFile.path}');
-      // Read and decode the original image
       final bytes = await imageFile.readAsBytes();
       print('Original image bytes: ${bytes.length}');
 
@@ -242,26 +223,23 @@ class OpenAIService {
         'Original image dimensions: ${originalImage.width}x${originalImage.height}, channels: ${originalImage.numChannels}',
       );
 
-      // Create a new RGBA image
       final rgbaImage = img.Image(
         width: originalImage.width,
         height: originalImage.height,
         numChannels: 4,
       );
 
-      // Copy pixels with alpha channel
       for (var y = 0; y < originalImage.height; y++) {
         for (var x = 0; x < originalImage.width; x++) {
           final pixel = originalImage.getPixel(x, y);
           final r = pixel.r;
           final g = pixel.g;
           final b = pixel.b;
-          rgbaImage.setPixelRgba(x, y, r, g, b, 255); // Full opacity
+          rgbaImage.setPixelRgba(x, y, r, g, b, 255);
         }
       }
       print('Created RGBA image');
 
-      // First try with medium compression
       final initialBytes = Uint8List.fromList(
         img.encodePng(rgbaImage, level: 6),
       );
@@ -272,11 +250,9 @@ class OpenAIService {
         return initialBytes;
       }
 
-      // If still too large, try resizing while maintaining RGBA format
       if (rgbaImage.width > maxImageDimension ||
           rgbaImage.height > maxImageDimension) {
         print('Image too large, resizing...');
-        // Resize image while maintaining aspect ratio
         final resizedImage = img.copyResize(
           rgbaImage,
           width: rgbaImage.width > rgbaImage.height ? maxImageDimension : null,
@@ -284,7 +260,6 @@ class OpenAIService {
         );
         print('Resized to: ${resizedImage.width}x${resizedImage.height}');
 
-        // Encode as PNG with high compression
         final resizedBytes = Uint8List.fromList(
           img.encodePng(resizedImage, level: 9),
         );
@@ -295,7 +270,6 @@ class OpenAIService {
           return resizedBytes;
         }
 
-        // If still too large, try more aggressive resizing
         print('Still too large, trying more aggressive resizing...');
         final smallerImage = img.copyResize(
           resizedImage,
@@ -317,7 +291,6 @@ class OpenAIService {
         }
       }
 
-      // If all else fails, try a very small image
       print('All resizing attempts failed, trying tiny image...');
       final tinyImage = img.copyResize(rgbaImage, width: 512, height: 512);
       print('Tiny image size: 512x512');
@@ -330,7 +303,6 @@ class OpenAIService {
         return tinyBytes;
       }
 
-      // If we still can't get a small enough PNG, throw an exception
       print('All attempts failed, image still too large');
       throw Exception('Image file is too large. Maximum size is 4MB.');
     } catch (e) {
@@ -339,16 +311,13 @@ class OpenAIService {
     }
   }
 
-  /// Analyze an image and return metadata
   Future<Map<String, dynamic>> analyzeImage(File imageFile) async {
     try {
       return await _monitoring.trackOperation(
         name: 'openai_analyze_image',
         operation: () async {
-          // Use existing _processImage method to handle the image
           final processedImageBytes = await _processImage(imageFile);
 
-          // Create basic image analysis
           final analysis = {
             'fileSize': await imageFile.length(),
             'processedSize': processedImageBytes.length,
@@ -370,7 +339,6 @@ class OpenAIService {
     }
   }
 
-  /// Get the dimensions of an image
   Future<Map<String, int>> _getImageDimensions(File imageFile) async {
     final bytes = await imageFile.readAsBytes();
     final image = img.decodeImage(bytes);
@@ -378,5 +346,54 @@ class OpenAIService {
       throw Exception('Failed to decode image for dimensions');
     }
     return {'width': image.width, 'height': image.height};
+  }
+
+  String buildDetailedPrompt(String prompt, String style, String featureType) {
+    switch (featureType) {
+      case 'convert':
+        return '''
+Transform the person in the input image into $style style while maintaining their identity.
+Use the person's facial features and appearance from the input image as the base for the transformation.
+Apply the artistic style while keeping their recognizable characteristics from the input image.
+Create a unique and imaginative composition that showcases both the person and the style.
+Ensure the person remains recognizable despite the artistic transformation.
+''';
+
+      case 'profile':
+        return '''
+Transform the person in the input image into a $style style profile picture avatar.
+Preserve the person's facial features, expression, and identity from the input image.
+Adapt the background, outfit, and lighting to match the chosen style while ensuring a flattering, well-lit, and confident appearance.
+Apply styling consistent with modern avatar trends—whether it's professional, casual, creative, gaming, or artistic.
+Maintain clean composition, clear facial detail, and visual polish appropriate for use as a display picture or resume profile.
+''';
+
+      case 'travel':
+        return '''
+Place the person from the input image at $prompt in $style visual style.
+Retain the person's original facial features, posture, and clothing from the input image while blending them naturally into the travel scene.
+Recreate the iconic elements of $prompt (e.g., landmarks, landscapes, cultural aesthetics) in a visually rich, scenic, and immersive way that reflects the chosen $style.
+Ensure the background, lighting, and color palette align with both the location and the selected visual style.
+The final image should feel like a dreamlike travel photo—vibrant, stylish, and shareable—while preserving the person's identity and enhancing the wanderlust vibe.
+''';
+
+      case 'celebrity':
+        return '''
+Create an image of the person from the input image standing next to $prompt in $style visual style.
+Maintain the person's original facial features, expression, and overall appearance from the input image.
+Ensure the celebrity is clearly recognizable and styled similarly to match the chosen visual style.
+Use a clean, thematic background that suits both subjects and reflects the $style aesthetic (e.g., Ghibli forest, Cyberpunk city, Vintage set).
+Both individuals should appear naturally posed—like a friendly or candid moment—while keeping them visually harmonized.
+Preserve the identity of both subjects while transforming the scene into a shareable, artistic, celebrity-style image.
+''';
+
+      default:
+        return '''
+Create an image based entirely on the following user prompt:
+"$prompt"
+Interpret the prompt creatively while maintaining visual coherence, aesthetic quality, and engaging composition.
+Do not apply any predefined style, structure, or constraints—fully adapt to the user's imagination.
+''';
+    }
   }
 }

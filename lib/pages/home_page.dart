@@ -1,3 +1,4 @@
+import 'package:aadi/pages/generation/events_page.dart';
 import 'package:aadi/pages/generation/image_input_page.dart';
 import 'package:aadi/pages/generation/image_text_input_page.dart';
 import 'package:aadi/pages/generation/text_input_page.dart';
@@ -51,25 +52,24 @@ class _HomePageState extends State<HomePage> {
                             } else {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder:
-                                      (context) => TextInputPage(
-                                        styles: [
-                                          'Classic Oil Painting',
-                                          'Ghibli',
-                                          '8-Bit Pixel Art',
-                                          'Sci - Fi',
-                                          '3D Cartoon',
-                                          'Anime',
-                                          'Geometric',
-                                          'Watercolor',
-                                          'Epic & Grand',
-                                          'Simple & Clean',
-                                          'Fun',
-                                          'Claymation',
-                                          'Professional',
-                                        ],
-                                        prompt: promptController.text.trim(),
-                                      ),
+                                  builder: (context) => TextInputPage(
+                                    styles: [
+                                      'Classic Oil Painting',
+                                      'Ghibli',
+                                      '8-Bit Pixel Art',
+                                      'Sci - Fi',
+                                      '3D Cartoon',
+                                      'Anime',
+                                      'Geometric',
+                                      'Watercolor',
+                                      'Epic & Grand',
+                                      'Simple & Clean',
+                                      'Fun',
+                                      'Claymation',
+                                      'Professional',
+                                    ],
+                                    prompt: promptController.text.trim(),
+                                  ),
                                 ),
                               );
                             }
@@ -130,7 +130,6 @@ class _HomePageState extends State<HomePage> {
                       child: GridView(
                         shrinkWrap: true,
                         physics: ClampingScrollPhysics(),
-
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           childAspectRatio: 1,
@@ -156,20 +155,8 @@ class _HomePageState extends State<HomePage> {
                           ),
                           FeatureContainer(
                             width: width,
-                            text: 'StarSnap',
-                            page: ImageTextInputPage(
-                              featureName: 'StarSnap',
-                              styles: [
-                                'Ghibli',
-                                'Realistic',
-                                'Red Carpet',
-                                'Candid Cafe',
-                                'Podcast',
-                                'Magazine Cover',
-                                'Cyberpunk',
-                              ],
-                              featureText: 'Celebrity Name',
-                            ),
+                            text: 'Events',
+                            page: EventsPage(),
                             image: 'celebrity',
                           ),
                         ],
