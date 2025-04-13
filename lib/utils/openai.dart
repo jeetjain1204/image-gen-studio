@@ -209,6 +209,169 @@ class OpenAIService {
     }
   }
 
+  Future<Uint8List> generateEventFromImageAndImage({
+    required File userImageFile,
+    required File eventImageFile,
+    required bool
+        isPoster, // true for poster/pamphlet, false for real-life event
+    String model = 'dall-e-2',
+    String size = '512x512',
+    int n = 1,
+  }) async {
+    if (_apiKey == null) {
+      throw Exception('OpenAIService not initialized');
+    }
+
+    try {
+      return await _monitoring.trackOperation(
+        name: 'openai_generate_event_from_images',
+        operation: () async {
+          print('Starting event image generation process...');
+
+          // Process both images
+          print('Processing user image...');
+          final processedUserImageBytes = await _processImage(userImageFile);
+          print(
+              'Processed user image size: ${processedUserImageBytes.length} bytes');
+
+          print('Processing event image...');
+          final processedEventImageBytes = await _processImage(eventImageFile);
+          print(
+              'Processed event image size: ${processedEventImageBytes.length} bytes');
+
+          // Generate appropriate prompt based on type
+          final prompt = isPoster
+              ? "Seamlessly integrate the person from the first image into the event poster/banner, making them appear as a natural part of the design while maintaining their facial features and appearance"
+              : "Naturally blend the person from the first image into the event scene, making them appear as if they were actually present at the event, maintaining realistic lighting, scale, and perspective";
+
+          final endpoint = Uri.parse('https://api.openai.com/v1/images/edits');
+          print('Using endpoint: $endpoint');
+          print(
+              'Integration type: ${isPoster ? "Poster/Banner" : "Real-life event"}');
+
+          final request = http.MultipartRequest('POST', endpoint);
+          request.headers['Authorization'] = 'Bearer $_apiKey';
+
+          // Add the event image as the base image
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              'image',
+              processedEventImageBytes,
+              filename: 'event.png',
+            ),
+          );
+
+          // Create mask for the area where user should be integrated
+          final decodedEventImage = img.decodeImage(processedEventImageBytes);
+          if (decodedEventImage == null) {
+            throw Exception('Failed to decode event image');
+          }
+
+          final maskImage = img.Image(
+            width: decodedEventImage.width,
+            height: decodedEventImage.height,
+            numChannels: 4,
+          );
+
+          // Create a strategic mask based on the type of integration
+          if (isPoster) {
+            // For posters, create a mask in a suitable area for profile placement
+            _createPosterMask(maskImage);
+          } else {
+            // For real-life events, create a mask in a natural position
+            _createEventSceneMask(maskImage);
+          }
+
+          final maskBytes = Uint8List.fromList(img.encodePng(maskImage));
+          print('Created mask image: ${maskBytes.length} bytes');
+
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              'mask',
+              maskBytes,
+              filename: 'mask.png',
+            ),
+          );
+
+          request.fields['prompt'] = prompt;
+          request.fields['n'] = n.toString();
+          request.fields['size'] = size;
+
+          print('Sending request to OpenAI API...');
+          final streamedResponse = await request.send();
+          final response = await http.Response.fromStream(streamedResponse);
+
+          if (response.statusCode != 200) {
+            print('API error response: ${response.body}');
+            throw Exception('Failed to generate image: ${response.body}');
+          }
+
+          print('Received successful response from OpenAI API');
+          final responseData = json.decode(response.body);
+          final imageUrl = responseData['data'][0]['url'];
+          if (imageUrl == null) {
+            throw Exception('No image URL in OpenAI API response');
+          }
+
+          print('Generated image URL: $imageUrl');
+          final imageResponse = await http.get(Uri.parse(imageUrl));
+          if (imageResponse.statusCode != 200) {
+            throw Exception('Failed to fetch generated image');
+          }
+
+          print(
+            'Downloaded generated image: ${imageResponse.bodyBytes.length} bytes',
+          );
+          return imageResponse.bodyBytes;
+        },
+      );
+    } catch (e, stackTrace) {
+      await _monitoring.logError(
+        e,
+        stackTrace,
+        reason: 'Failed to generate event image',
+        information: [
+          'Integration type: ${isPoster ? "Poster" : "Real-life event"}',
+          'Model: $model',
+          'Size: $size',
+        ],
+      );
+      throw Exception('Failed to generate event image: $e');
+    }
+  }
+
+  void _createPosterMask(img.Image maskImage) {
+    // Create a mask that covers approximately 20% of the image in a suitable position
+    final maskWidth = (maskImage.width * 0.2).round();
+    final maskHeight = (maskImage.height * 0.2).round();
+    final startX = (maskImage.width * 0.1).round();
+    final startY = (maskImage.height * 0.1).round();
+
+    for (var y = startY; y < startY + maskHeight; y++) {
+      for (var x = startX; x < startX + maskWidth; x++) {
+        if (x < maskImage.width && y < maskImage.height) {
+          maskImage.setPixel(x, y, img.ColorRgba8(255, 255, 255, 255));
+        }
+      }
+    }
+  }
+
+  void _createEventSceneMask(img.Image maskImage) {
+    // Create a mask that covers a natural position in the scene
+    final maskWidth = (maskImage.width * 0.3).round();
+    final maskHeight = (maskImage.height * 0.5).round();
+    final startX = (maskImage.width * 0.35).round();
+    final startY = (maskImage.height * 0.3).round();
+
+    for (var y = startY; y < startY + maskHeight; y++) {
+      for (var x = startX; x < startX + maskWidth; x++) {
+        if (x < maskImage.width && y < maskImage.height) {
+          maskImage.setPixel(x, y, img.ColorRgba8(255, 255, 255, 128));
+        }
+      }
+    }
+  }
+
   Future<Uint8List> _processImage(File imageFile) async {
     try {
       print('Processing image: ${imageFile.path}');

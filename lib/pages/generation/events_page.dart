@@ -1,11 +1,15 @@
 import 'dart:io';
-
+import 'package:path_provider/path_provider.dart';
+import 'package:http/http.dart' as http;
 import 'package:aadi/utils/colors.dart';
 import 'package:aadi/widgets/image_picker.dart';
 import 'package:aadi/widgets/my_button.dart';
 import 'package:aadi/widgets/snack_bar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:aadi/utils/openai.dart';
+import 'package:aadi/pages/generation/loading_page.dart';
+import 'package:aadi/pages/generation/image_generated_page.dart';
 
 class EventsPage extends StatefulWidget {
   const EventsPage({super.key});
@@ -57,12 +61,65 @@ class _EventsPageState extends State<EventsPage> {
       return mySnackBar(context, 'Select an Image');
     }
 
-    if (selectedFestivalIndex != null) {
-      final name = festivalData.keys.elementAt(selectedFestivalIndex!);
-      final imageUrl = festivalData[name]['image'];
-    } else if (selectedCardIndex != null) {
-      final name = cardsData.keys.elementAt(selectedCardIndex!);
-      final imageUrl = cardsData[name]['image'];
+    try {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const LoadingPage()),
+      );
+
+      String? eventImageUrl;
+      bool isPoster = true; // Default to poster mode
+
+      if (selectedFestivalIndex != null) {
+        final name = festivalData.keys.elementAt(selectedFestivalIndex!);
+        eventImageUrl = festivalData[name]['image'];
+        isPoster = false; // Festival photos are real-life events
+      } else if (selectedCardIndex != null) {
+        final name = cardsData.keys.elementAt(selectedCardIndex!);
+        eventImageUrl = cardsData[name]['image'];
+        isPoster = true; // Cards are treated as posters/banners
+      }
+
+      if (eventImageUrl == null) {
+        throw Exception('No event image URL found');
+      }
+
+      // Download the event image
+      final response = await http.get(Uri.parse(eventImageUrl));
+      if (response.statusCode != 200) {
+        throw Exception('Failed to download event image');
+      }
+
+      // Create a temporary file for the event image
+      final tempDir = await getTemporaryDirectory();
+      final eventImageFile = File('${tempDir.path}/event_image.png');
+      await eventImageFile.writeAsBytes(response.bodyBytes);
+
+      // Generate the combined image
+      final generatedImage =
+          await OpenAIService.instance.generateEventFromImageAndImage(
+        userImageFile: image!,
+        eventImageFile: eventImageFile,
+        isPoster: isPoster,
+        size: '512x512',
+      );
+
+      if (!context.mounted) return;
+
+      // Clean up the temporary file
+      await eventImageFile.delete();
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ImageGeneratedPage(image: generatedImage),
+        ),
+      );
+    } catch (e) {
+      if (context.mounted) Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
     }
   }
 
@@ -414,7 +471,9 @@ class _EventsPageState extends State<EventsPage> {
                           SizedBox(height: 12),
                           MyButton(
                             text: 'GENERATE',
-                            onTap: () async {},
+                            onTap: () async {
+                              await generate();
+                            },
                           ),
                         ],
                       ),
