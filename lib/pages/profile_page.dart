@@ -80,7 +80,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   ProfileContainer(
                     width: width,
-                    text: 'Your Private Gallery',
+                    text: 'Your Gallery',
                   ),
                 ],
               ),

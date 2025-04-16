@@ -157,7 +157,7 @@ class _HomePageState extends State<HomePage> {
                             width: width,
                             text: 'Events',
                             page: EventsPage(),
-                            image: 'celebrity',
+                            image: 'events',
                           ),
                         ],
                       ),

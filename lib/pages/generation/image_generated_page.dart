@@ -3,24 +3,30 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:aadi/widgets/my_button.dart';
 import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class ImageGeneratedPage extends StatelessWidget {
+class ImageGeneratedPage extends StatefulWidget {
   final Uint8List image;
   static const platform = MethodChannel('com.infinitylab.aadi/image_saver');
 
   const ImageGeneratedPage({Key? key, required this.image}) : super(key: key);
 
+  @override
+  State<ImageGeneratedPage> createState() => _ImageGeneratedPageState();
+}
+
+class _ImageGeneratedPageState extends State<ImageGeneratedPage> {
+  final store = FirebaseFirestore.instance;
+
   Future<void> _saveImage(BuildContext context) async {
     try {
-      // Save to temporary file first
       final tempDir = await getTemporaryDirectory();
       final tempFile = File(
         '${tempDir.path}/aadi_generated_${DateTime.now().millisecondsSinceEpoch}.png',
       );
-      await tempFile.writeAsBytes(image);
+      await tempFile.writeAsBytes(widget.image);
 
-      // Use platform channel to save to gallery
-      final result = await platform.invokeMethod<bool>(
+      final result = await ImageGeneratedPage.platform.invokeMethod<bool>(
         'saveImageToGallery',
         {'imagePath': tempFile.path},
       );
@@ -43,14 +49,12 @@ class ImageGeneratedPage extends StatelessWidget {
 
   Future<void> _shareImage(BuildContext context) async {
     try {
-      // Save to temporary file
       final tempDir = await getTemporaryDirectory();
       final tempFile = File(
         '${tempDir.path}/aadi_shared_${DateTime.now().millisecondsSinceEpoch}.png',
       );
-      await tempFile.writeAsBytes(image);
+      await tempFile.writeAsBytes(widget.image);
 
-      // Share the file
       // await Share.shareXFiles([
       //   XFile(tempFile.path),
       // ], text: 'Generated with Aadi App');
@@ -61,8 +65,15 @@ class ImageGeneratedPage extends StatelessWidget {
     }
   }
 
+  Future<void> _contributeToGallery(BuildContext context) async {
+    try {} catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error contributing to gallery: $e')),
+      );
+    }
+  }
+
   void _goToNext(BuildContext context) {
-    // Navigate back to the main screen
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
@@ -71,23 +82,12 @@ class ImageGeneratedPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Generated Image'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: () => _saveImage(context),
-            tooltip: 'Save to Gallery',
-          ),
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: () => _shareImage(context),
-            tooltip: 'Share',
-          ),
-        ],
       ),
       body: Column(
         children: [
           Expanded(
-            child: Center(child: Image.memory(image, fit: BoxFit.contain)),
+            child:
+                Center(child: Image.memory(widget.image, fit: BoxFit.contain)),
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -96,6 +96,10 @@ class ImageGeneratedPage extends StatelessWidget {
               children: [
                 MyButton(text: 'SAVE', onTap: () => _saveImage(context)),
                 MyButton(text: 'SHARE', onTap: () => _shareImage(context)),
+                MyButton(
+                  text: 'CONTRIBUTE TO GALLERY',
+                  onTap: () => _contributeToGallery(context),
+                ),
                 MyButton(text: 'NEXT', onTap: () => _goToNext(context)),
               ],
             ),

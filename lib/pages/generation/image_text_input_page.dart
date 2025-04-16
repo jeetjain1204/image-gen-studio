@@ -52,7 +52,11 @@ class _ImageTextInputPageState extends State<ImageTextInputPage> {
       for (var y = 0; y < originalImage.height; y++) {
         for (var x = 0; x < originalImage.width; x++) {
           final pixel = originalImage.getPixel(x, y);
-          rgbaImage.setPixel(x, y, pixel);
+          final r = pixel.r;
+          final g = pixel.g;
+          final b = pixel.b;
+          final a = pixel.a;
+          rgbaImage.setPixelRgba(x, y, r, g, b, a);
         }
       }
 
@@ -108,25 +112,24 @@ class _ImageTextInputPageState extends State<ImageTextInputPage> {
         MaterialPageRoute(builder: (_) => const LoadingPage()),
       );
 
-      String feature =
-          widget.featureName.toLowerCase() == 'starsnap'
-              ? 'celebrity'
-              : 'travel';
+      String feature = widget.featureName.toLowerCase() == 'starsnap'
+          ? 'celebrity'
+          : 'travel';
 
       final explanation =
           styleExplanations[feature]![selectedStyle] ?? selectedStyle;
 
       // Use the new method for image+text generation
-      final generatedImage = await OpenAIService.instance
-          .generateImageFromImageAndText(
-            imageFile: image!,
-            prompt:
-                'Convert the provided image to a $selectedStyle style. $explanation',
-            model: 'dall-e-2',
-            size: '512x512',
-            n: 1,
-            isVariation: false,
-          );
+      final generatedImage =
+          await OpenAIService.instance.generateImageFromImageAndText(
+        imageFile: image!,
+        prompt:
+            'Convert the provided image to a $selectedStyle style. $explanation',
+        model: 'dall-e-2',
+        size: '512x512',
+        n: 1,
+        isVariation: false,
+      );
 
       if (!context.mounted) return;
 
@@ -171,60 +174,61 @@ class _ImageTextInputPageState extends State<ImageTextInputPage> {
                     ),
                     image == null
                         ? InkWell(
-                          onTap: () async {
-                            final selectedImage =
-                                await imagePicker.pickImageFromCamera();
-                            if (selectedImage != null) {
-                              setState(() {
-                                image = selectedImage;
-                              });
-                            } else {
-                              return mySnackBar(context, 'Select an Image');
-                            }
-                          },
-                          borderRadius: BorderRadius.circular(24),
-                          child: Container(
+                            onTap: () async {
+                              final selectedImage =
+                                  await imagePicker.pickImageFromCamera();
+                              if (selectedImage != null) {
+                                setState(() {
+                                  image = selectedImage;
+                                });
+                              } else {
+                                return mySnackBar(context, 'Select an Image');
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(24),
+                            child: Container(
+                              width: width,
+                              height: width,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: primaryDark,
+                                  width: 1.5,
+                                ),
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: Text('Select Image'),
+                            ),
+                          )
+                        : Container(
                             width: width,
                             height: width,
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              border: Border.all(
-                                color: primaryDark,
-                                width: 1.5,
-                              ),
+                              border:
+                                  Border.all(color: primaryDark, width: 1.5),
                               borderRadius: BorderRadius.circular(24),
                             ),
-                            child: Text('Select Image'),
+                            child: Stack(
+                              alignment: Alignment.topRight,
+                              children: [
+                                Image.file(
+                                  image!,
+                                  width: width,
+                                  height: width,
+                                  fit: BoxFit.contain,
+                                ),
+                                IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      image = null;
+                                    });
+                                  },
+                                  icon: Icon(Icons.cancel_outlined),
+                                ),
+                              ],
+                            ),
                           ),
-                        )
-                        : Container(
-                          width: width,
-                          height: width,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: primaryDark, width: 1.5),
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          child: Stack(
-                            alignment: Alignment.topRight,
-                            children: [
-                              Image.file(
-                                image!,
-                                width: width,
-                                height: width,
-                                fit: BoxFit.contain,
-                              ),
-                              IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    image = null;
-                                  });
-                                },
-                                icon: Icon(Icons.cancel_outlined),
-                              ),
-                            ],
-                          ),
-                        ),
                     SizedBox(
                       width: width,
                       child: GridView.builder(
@@ -247,10 +251,9 @@ class _ImageTextInputPageState extends State<ImageTextInputPage> {
                             child: Container(
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
-                                color:
-                                    selectedStyle == name
-                                        ? primaryDark
-                                        : primary,
+                                color: selectedStyle == name
+                                    ? primaryDark
+                                    : primary,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               padding: EdgeInsets.all(width * 0.0225),
@@ -261,10 +264,9 @@ class _ImageTextInputPageState extends State<ImageTextInputPage> {
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  color:
-                                      selectedStyle == name
-                                          ? primary
-                                          : primaryDark,
+                                  color: selectedStyle == name
+                                      ? primary
+                                      : primaryDark,
                                   fontSize: width * 0.04,
                                 ),
                               ),

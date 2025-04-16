@@ -2,9 +2,12 @@ package com.infinitylab.aadi
 
 import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import androidx.core.content.FileProvider
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -31,6 +34,14 @@ class ImageSaverPlugin: FlutterPlugin, MethodChannel.MethodCallHandler {
                     return
                 }
                 saveImageToGallery(imagePath, result)
+            }
+            "shareImage" -> {
+                val imagePath = call.argument<String>("imagePath")
+                if (imagePath == null) {
+                    result.error("INVALID_ARGUMENT", "Image path cannot be null", null)
+                    return
+                }
+                shareImage(imagePath, result)
             }
             else -> result.notImplemented()
         }
@@ -68,6 +79,34 @@ class ImageSaverPlugin: FlutterPlugin, MethodChannel.MethodCallHandler {
             result.success(true)
         } catch (e: IOException) {
             result.error("SAVE_FAILED", "Failed to save image: ${e.message}", null)
+        }
+    }
+
+    private fun shareImage(imagePath: String, result: MethodChannel.Result) {
+        try {
+            val sourceFile = File(imagePath)
+            if (!sourceFile.exists()) {
+                result.error("FILE_NOT_FOUND", "Source file does not exist", null)
+                return
+            }
+
+            // Create a content URI for the file using FileProvider
+            val authority = "${context.packageName}.fileprovider"
+            val contentUri = FileProvider.getUriForFile(context, authority, sourceFile)
+
+            // Create and start the share intent
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "image/png"
+                putExtra(Intent.EXTRA_STREAM, contentUri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+
+            // Start the share activity
+            context.startActivity(Intent.createChooser(shareIntent, "Share Image"))
+            result.success(true)
+        } catch (e: Exception) {
+            result.error("SHARE_FAILED", "Failed to share image: ${e.message}", null)
         }
     }
 

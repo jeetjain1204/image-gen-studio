@@ -106,7 +106,6 @@ class _EventsPageState extends State<EventsPage> {
 
       if (!context.mounted) return;
 
-      // Clean up the temporary file
       await eventImageFile.delete();
 
       Navigator.pushReplacement(
