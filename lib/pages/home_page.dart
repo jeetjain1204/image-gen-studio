@@ -1,3 +1,4 @@
+import 'package:aadi/pages/generation/avatars_page.dart';
 import 'package:aadi/pages/generation/events_page.dart';
 import 'package:aadi/pages/generation/image_input_page.dart';
 import 'package:aadi/pages/generation/image_text_input_page.dart';
@@ -22,7 +23,9 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      appBar: AppBar(title: Text('Aadi')),
+      appBar: AppBar(
+        title: Text('Aadi'),
+      ),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -83,6 +86,14 @@ class _HomePageState extends State<HomePage> {
                     Divider(),
                     FeatureContainer(
                       width: width,
+                      text: 'Avatars',
+                      page: AvatarsPage(
+                        featureName: 'Avatars',
+                      ),
+                      image: 'avatar',
+                    ),
+                    FeatureContainer(
+                      width: width,
                       text: 'Convert To Ghibli',
                       page: ImageInputPage(
                         featureName: 'Convert to Ghibli',
@@ -100,30 +111,6 @@ class _HomePageState extends State<HomePage> {
                         ],
                       ),
                       image: 'ghibli',
-                    ),
-                    FeatureContainer(
-                      width: width,
-                      text: 'Profile Avatar Maker',
-                      page: ImageInputPage(
-                        featureName: 'Profile Avatar Maker',
-                        styles: [
-                          'Ghibli',
-                          'Passport Photo',
-                          '3D Cartoon',
-                          'Anime',
-                          'Watercolor',
-                          'Minecraft Avatar',
-                          'Cyberpunk',
-                          'Epic & Grand',
-                          'Simple & Clean',
-                          'Fun',
-                          'Claymation',
-                          'Professional',
-                          'Geometric',
-                          '8-Bit Pixel Art',
-                        ],
-                      ),
-                      image: 'avatar',
                     ),
                     SizedBox(
                       width: width,

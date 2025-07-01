@@ -25,7 +25,7 @@ class FeatureContainer extends StatelessWidget {
       },
       child: Container(
         width: width,
-        height: 180,
+        height: width,
         alignment: Alignment.bottomLeft,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
@@ -36,24 +36,13 @@ class FeatureContainer extends StatelessWidget {
         ),
         padding: EdgeInsets.all(width * 0.0225),
         margin: EdgeInsets.all(width * 0.0125),
-        child: Stack(
-          alignment: Alignment.bottomLeft,
-          children: [
-            Image.asset(
-              'assets/$image.jpg',
-              fit: BoxFit.cover,
-              width: width,
-              height: 180,
-            ),
-            Text(
-              text,
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: width * 0.05,
-                color: primary,
-              ),
-            ),
-          ],
+        child: Text(
+          text,
+          style: TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: width * 0.05,
+            color: primary,
+          ),
         ),
       ),
     );
