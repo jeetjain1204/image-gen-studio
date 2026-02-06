@@ -1,16 +1,11 @@
-# aadi
+# Aadi: Enterprise Generative Studio
 
-A new Flutter project.
+![AI](https://img.shields.io/badge/GenAI-Multi%20Model-yellow?style=for-the-badge)
 
-## Getting Started
+## ⚡ Overview
+A unified generative workspace integrating best-in-class diffusion models. Aadi provides a layer of control and precision over raw AI outputs, designed for professional designers and agencies.
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🚀 Features
+* **Model Orchestration:** Seamlessly switches between Stable Diffusion, DALL-E, and Flux architectures.
+* **Proprietary Fine-Tuning:** Supports LoRA injection for brand-consistent asset generation.
+* **Canvas Editor:** Infinite workspace for outpainting and iterative refinement.
